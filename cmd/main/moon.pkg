@@ -1,0 +1,9 @@
+import {
+  "moonbitlang/core/env",
+  "moonbitlang/core/string",
+  "100kkk/moon-schedule" @schedule,
+}
+
+options(
+  "is-main": true,
+)
