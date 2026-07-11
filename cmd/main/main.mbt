@@ -40,11 +40,17 @@ fn parse_command(args : Array[String]) -> Unit raise @schedule.ScheduleError {
 
 ///|
 fn next_command(args : Array[String]) -> Unit raise @schedule.ScheduleError {
-  if args.length() != 5 { print_usage(); return }
+  if args.length() != 5 {
+    print_usage()
+    return
+  }
   let (kind, expression) = split_spec(args[2])
   let after = @schedule.DateTime::parse(args[3])
   let amount = @string.parse_int(args[4]) catch { _ => 0 }
-  if amount < 1 { println("amount must be positive"); return }
+  if amount < 1 {
+    println("amount must be positive")
+    return
+  }
   match kind {
     "cron" => {
       let cron = @schedule.Cron::parse(expression)
@@ -59,7 +65,10 @@ fn next_command(args : Array[String]) -> Unit raise @schedule.ScheduleError {
       let mut current = after
       for _ in 0..<amount {
         match rule.next_after(current) {
-          Some(next) => { println(next.to_string()); current = next }
+          Some(next) => {
+            println(next.to_string())
+            current = next
+          }
           None => return
         }
       }
@@ -70,7 +79,10 @@ fn next_command(args : Array[String]) -> Unit raise @schedule.ScheduleError {
 
 ///|
 fn between_command(args : Array[String]) -> Unit raise @schedule.ScheduleError {
-  if args.length() != 5 { print_usage(); return }
+  if args.length() != 5 {
+    print_usage()
+    return
+  }
   let (kind, expression) = split_spec(args[2])
   let start = @schedule.DateTime::parse(args[3])
   let end = @schedule.DateTime::parse(args[4])
@@ -86,7 +98,9 @@ fn between_command(args : Array[String]) -> Unit raise @schedule.ScheduleError {
       let mut current = start.add_minutes(-1)
       for _ in 0..<1_100_000 {
         let next = cron.next_after(current)
-        if next > end { return }
+        if next > end {
+          return
+        }
         println(next.to_string())
         current = next
       }
@@ -98,7 +112,8 @@ fn between_command(args : Array[String]) -> Unit raise @schedule.ScheduleError {
 ///|
 fn split_spec(input : String) -> (String, String) {
   match input.split(":").to_array() {
-    [kind, .. rest] if rest.length() > 0 => (kind.to_owned().to_lower(), rest.join(":"))
+    [kind, .. rest] if rest.length() > 0 =>
+      (kind.to_owned().to_lower(), rest.join(":"))
     _ => ("", input)
   }
 }
@@ -107,6 +122,8 @@ fn split_spec(input : String) -> (String, String) {
 fn print_usage() -> Unit {
   println("MoonSchedule UTC simulator")
   println("  moon run cmd/main -- parse cron:<five fields>")
-  println("  moon run cmd/main -- next cron:<five fields> <YYYY-MM-DDTHH:MMZ> <amount>")
+  println(
+    "  moon run cmd/main -- next cron:<five fields> <YYYY-MM-DDTHH:MMZ> <amount>",
+  )
   println("  moon run cmd/main -- between rrule:<rule> <start> <end>")
 }

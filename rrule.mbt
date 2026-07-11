@@ -17,7 +17,8 @@ pub struct RRule {
   months : Array[Int]
 } derive(Debug)
 
-///| Parse the UTC-safe RFC 5545 subset used by MoonSchedule.
+///|
+/// Parse the UTC-safe RFC 5545 subset used by MoonSchedule.
 pub fn RRule::parse(input : String) -> RRule raise ScheduleError {
   let mut frequency : Frequency? = None
   let mut interval = 1
@@ -28,7 +29,9 @@ pub fn RRule::parse(input : String) -> RRule raise ScheduleError {
   let mut months : Array[Int] = []
   for raw in input.trim().split(";") {
     let pair = raw.split("=").to_array()
-    if pair.length() != 2 { raise InvalidRule("RRULE entries need KEY=VALUE") }
+    if pair.length() != 2 {
+      raise InvalidRule("RRULE entries need KEY=VALUE")
+    }
     let key = pair[0].to_owned().to_upper()
     let value = pair[1].to_owned().to_upper()
     match key {
@@ -43,12 +46,14 @@ pub fn RRule::parse(input : String) -> RRule raise ScheduleError {
     }
   }
   match frequency {
-    Some(frequency) => { frequency, interval, count, until, weekdays, monthdays, months }
+    Some(frequency) =>
+      { frequency, interval, count, until, weekdays, monthdays, months }
     None => raise InvalidRule("RRULE requires FREQ")
   }
 }
 
-///| Enumerate occurrences in `[start, end]`; `start` is the recurrence anchor.
+///|
+/// Enumerate occurrences in `[start, end]`; `start` is the recurrence anchor.
 pub fn RRule::occurrences_between(
   self : RRule,
   start : DateTime,
@@ -58,12 +63,18 @@ pub fn RRule::occurrences_between(
   let mut candidate = start
   let mut emitted = 0
   for _ in 0..<20000 {
-    if candidate > end { break }
-    if self.until is Some(limit) && candidate > limit { break }
+    if candidate > end {
+      break
+    }
+    if self.until is Some(limit) && candidate > limit {
+      break
+    }
     if self.matches_filters(candidate) {
       output.push(candidate)
       emitted = emitted + 1
-      if self.count is Some(limit) && emitted >= limit { break }
+      if self.count is Some(limit) && emitted >= limit {
+        break
+      }
     }
     candidate = advance(candidate, self.frequency, self.interval)
   }
@@ -85,7 +96,11 @@ fn RRule::matches_filters(self : RRule, candidate : DateTime) -> Bool {
 }
 
 ///|
-fn advance(current : DateTime, frequency : Frequency, interval : Int) -> DateTime {
+fn advance(
+  current : DateTime,
+  frequency : Frequency,
+  interval : Int,
+) -> DateTime {
   match frequency {
     Daily => current.add_minutes(interval * 1440)
     Weekly => current.add_minutes(interval * 10080)
@@ -96,10 +111,14 @@ fn advance(current : DateTime, frequency : Frequency, interval : Int) -> DateTim
 
 ///|
 fn add_months(current : DateTime, amount : Int) -> DateTime {
-  let raw = (current.year * 12 + current.month - 1) + amount
+  let raw = current.year * 12 + current.month - 1 + amount
   let year = raw / 12
   let month = raw % 12 + 1
-  let day = if current.day > days_in_month(year, month) { days_in_month(year, month) } else { current.day }
+  let day = if current.day > days_in_month(year, month) {
+    days_in_month(year, month)
+  } else {
+    current.day
+  }
   { year, month, day, hour: current.hour, minute: current.minute }
 }
 
@@ -116,17 +135,28 @@ fn parse_frequency(value : String) -> Frequency raise ScheduleError {
 
 ///|
 fn positive_number(value : String, label : String) -> Int raise ScheduleError {
-  let result = @string.parse_int(value) catch { _ => raise InvalidRule("\{label} must be a number") }
-  if result < 1 { raise InvalidRule("\{label} must be positive") }
+  let result = @string.parse_int(value) catch {
+    _ => raise InvalidRule("\{label} must be a number")
+  }
+  if result < 1 {
+    raise InvalidRule("\{label} must be positive")
+  }
   result
 }
 
 ///|
-fn parse_numbers(value : String, minimum : Int, maximum : Int, label : String) -> Array[Int] raise ScheduleError {
+fn parse_numbers(
+  value : String,
+  minimum : Int,
+  maximum : Int,
+  label : String,
+) -> Array[Int] raise ScheduleError {
   let output : Array[Int] = []
   for item in value.split(",") {
     let number = positive_number(item.to_owned(), label)
-    if number < minimum || number > maximum { raise InvalidRule("\{label} value is out of range") }
+    if number < minimum || number > maximum {
+      raise InvalidRule("\{label} value is out of range")
+    }
     output.push(number)
   }
   output

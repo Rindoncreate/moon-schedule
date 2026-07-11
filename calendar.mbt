@@ -56,7 +56,12 @@ pub fn DateTime::to_string(self : DateTime) -> String {
 ///|
 pub fn DateTime::parse(input : String) -> DateTime raise ScheduleError {
   let text = input.trim().to_owned()
-  if text.length() != 17 || text[4] != '-' || text[7] != '-' || text[10] != 'T' || text[13] != ':' || text[16] != 'Z' {
+  if text.length() != 17 ||
+    text[4] != '-' ||
+    text[7] != '-' ||
+    text[10] != 'T' ||
+    text[13] != ':' ||
+    text[16] != 'Z' {
     raise InvalidDate("expected RFC 3339 minute timestamp YYYY-MM-DDTHH:MMZ")
   }
   DateTime::new(
@@ -110,7 +115,13 @@ fn DateTime::previous_day(self : DateTime) -> DateTime {
     { ..self, day: self.day - 1, hour: 23, minute: 59 }
   } else if self.month > 1 {
     let month = self.month - 1
-    { year: self.year, month, day: days_in_month(self.year, month), hour: 23, minute: 59 }
+    {
+      year: self.year,
+      month,
+      day: days_in_month(self.year, month),
+      hour: 23,
+      minute: 59,
+    }
   } else {
     { year: self.year - 1, month: 12, day: 31, hour: 23, minute: 59 }
   }
@@ -124,7 +135,7 @@ pub fn DateTime::weekday(self : DateTime) -> Int {
     y = y - 1
     m = m + 12
   }
-  (self.day + (13 * (m + 1)) / 5 + y + y / 4 - y / 100 + y / 400 + 6) % 7
+  (self.day + 13 * (m + 1) / 5 + y + y / 4 - y / 100 + y / 400 + 6) % 7
 }
 
 ///|
@@ -136,10 +147,22 @@ fn parse_number(input : StringView, name : String) -> Int raise ScheduleError {
 
 ///|
 fn pad2(value : Int) -> String {
-  if value < 10 { "0\{value}" } else { "\{value}" }
+  if value < 10 {
+    "0\{value}"
+  } else {
+    "\{value}"
+  }
 }
 
 ///|
 fn pad4(value : Int) -> String {
-  if value < 10 { "000\{value}" } else if value < 100 { "00\{value}" } else if value < 1000 { "0\{value}" } else { "\{value}" }
+  if value < 10 {
+    "000\{value}"
+  } else if value < 100 {
+    "00\{value}"
+  } else if value < 1000 {
+    "0\{value}"
+  } else {
+    "\{value}"
+  }
 }

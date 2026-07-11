@@ -9,9 +9,14 @@ pub struct Cron {
   weekdays_wildcard : Bool
 } derive(Debug)
 
-///| Parse a five-field UTC cron expression: minute hour day-of-month month day-of-week.
+///|
+/// Parse a five-field UTC cron expression: minute hour day-of-month month day-of-week.
 pub fn Cron::parse(input : String) -> Cron raise ScheduleError {
-  let fields = input.trim().split(" ").filter(field => field.length() > 0).to_array()
+  let fields = input
+    .trim()
+    .split(" ")
+    .filter(field => field.length() > 0)
+    .to_array()
   if fields.length() != 5 {
     raise InvalidRule("cron needs exactly five fields")
   }
@@ -20,14 +25,23 @@ pub fn Cron::parse(input : String) -> Cron raise ScheduleError {
   let days = parse_field(fields[2], 1, 31, "day-of-month", false)
   let months = parse_field(fields[3], 1, 12, "month", true)
   let weekdays = parse_field(fields[4], 0, 7, "day-of-week", true)
-  { minutes, hours, days, months, weekdays, days_wildcard: fields[2] == "*", weekdays_wildcard: fields[4] == "*" }
+  {
+    minutes,
+    hours,
+    days,
+    months,
+    weekdays,
+    days_wildcard: fields[2] == "*",
+    weekdays_wildcard: fields[4] == "*",
+  }
 }
 
 ///|
 pub fn Cron::matches(self : Cron, at : DateTime) -> Bool {
   let weekday = at.weekday()
   let day_matches = self.days[at.day]
-  let weekday_matches = self.weekdays[weekday] || (weekday == 0 && self.weekdays[7])
+  let weekday_matches = self.weekdays[weekday] ||
+    (weekday == 0 && self.weekdays[7])
   let calendar_matches = if self.days_wildcard && self.weekdays_wildcard {
     true
   } else if self.days_wildcard {
@@ -37,11 +51,18 @@ pub fn Cron::matches(self : Cron, at : DateTime) -> Bool {
   } else {
     day_matches || weekday_matches
   }
-  self.minutes[at.minute] && self.hours[at.hour] && self.months[at.month] && calendar_matches
+  self.minutes[at.minute] &&
+  self.hours[at.hour] &&
+  self.months[at.month] &&
+  calendar_matches
 }
 
-///| Return the first matching minute strictly after `after`, searching at most two years.
-pub fn Cron::next_after(self : Cron, after : DateTime) -> DateTime raise ScheduleError {
+///|
+/// Return the first matching minute strictly after `after`, searching at most two years.
+pub fn Cron::next_after(
+  self : Cron,
+  after : DateTime,
+) -> DateTime raise ScheduleError {
   let mut candidate = after.add_minutes(1)
   for _ in 0..<1_100_000 {
     if self.matches(candidate) {
@@ -82,9 +103,13 @@ fn parse_part(
   }
   let step = if pieces.length() == 2 {
     let value = cron_value(pieces[1], minimum, maximum, name, allow_names)
-    if value < 1 { raise InvalidRule("step must be positive") }
+    if value < 1 {
+      raise InvalidRule("step must be positive")
+    }
     value
-  } else { 1 }
+  } else {
+    1
+  }
   let range = pieces[0]
   if range == "*" {
     mark_range(output, minimum, maximum, step)
@@ -96,7 +121,9 @@ fn parse_part(
     } else if ends.length() == 2 {
       let start = cron_value(ends[0], minimum, maximum, name, allow_names)
       let end = cron_value(ends[1], minimum, maximum, name, allow_names)
-      if start > end { raise InvalidRule("range start exceeds end in \{name}") }
+      if start > end {
+        raise InvalidRule("range start exceeds end in \{name}")
+      }
       mark_range(output, start, end, step)
     } else {
       raise InvalidRule("invalid range in \{name}")
@@ -123,7 +150,10 @@ fn cron_value(
   let named = if allow_names { cron_name(upper) } else { None }
   let value = match named {
     Some(value) => value
-    None => @string.parse_int(upper) catch { _ => raise InvalidRule("invalid \{name} value: \{raw}") }
+    None =>
+      @string.parse_int(upper) catch {
+        _ => raise InvalidRule("invalid \{name} value: \{raw}")
+      }
   }
   if value < minimum || value > maximum {
     raise InvalidRule("\{name} must be \{minimum}..\{maximum}")
