@@ -1,6 +1,7 @@
 ///|
 pub suberror ScheduleError {
   InvalidDate(String)
+  InvalidRule(String)
 }
 
 ///|
