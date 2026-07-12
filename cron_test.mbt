@@ -13,3 +13,17 @@ test "cron finds the next matching minute" {
   let after = DateTime::new(2024, 12, 31, 23, 59)
   inspect(cron.next_after(after).to_string(), content="2025-01-01T00:00Z")
 }
+
+///|
+test "cron combines day of month and weekday with OR" {
+  let cron = Cron::parse("0 9 15 * MON")
+  assert_true(cron.matches(DateTime::new(2025, 1, 6, 9, 0)))
+  assert_true(cron.matches(DateTime::new(2025, 1, 15, 9, 0)))
+  assert_false(cron.matches(DateTime::new(2025, 1, 14, 9, 0)))
+}
+
+///|
+test "cron accepts seven as the sunday alias" {
+  let cron = Cron::parse("0 0 * * 7")
+  assert_true(cron.matches(DateTime::new(2025, 1, 5, 0, 0)))
+}
