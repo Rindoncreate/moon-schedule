@@ -1,5 +1,7 @@
 # MoonSchedule 项目申报材料
 
+> 上游 0.1.0 的历史材料，保留用于来源追溯，不是 Rindoncreate 本次维护贡献的正式申报书。当前生态情况、本次新增范围和归属以 `docs/contribution-plan.md` 为准。
+
 **项目名称：** MoonSchedule
 
 **项目简介：** 面向 MoonBit 的纯实现 UTC 日程规则引擎，统一提供 Cron 与 RFC 5545 RRULE 的解析、匹配、下一次触发计算和区间实例枚举。
