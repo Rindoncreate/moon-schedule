@@ -4,6 +4,4 @@ import {
   "100kkk/moon-schedule" @schedule,
 }
 
-options(
-  "is-main": true,
-)
+pkgtype(kind: "executable")

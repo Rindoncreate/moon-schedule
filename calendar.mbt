@@ -14,6 +14,15 @@ pub struct DateTime {
 } derive(Eq, Compare, Debug)
 
 ///|
+pub extend DateTime with Eq::{equal, not_equal}
+
+///|
+pub extend DateTime with Compare::{compare, op_lt, op_le, op_ge, op_gt}
+
+///|
+pub extend DateTime with @debug.Debug::{to_repr}
+
+///|
 pub fn is_leap_year(year : Int32) -> Bool {
   (year % 4 == 0 && year % 100 != 0) || year % 400 == 0
 }

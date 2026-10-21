@@ -7,10 +7,22 @@ pub enum Frequency {
 } derive(Eq, Debug)
 
 ///|
+pub extend Frequency with Eq::{equal, not_equal}
+
+///|
+pub extend Frequency with @debug.Debug::{to_repr}
+
+///|
 pub struct WeekdaySpec {
   weekday : Int32
   ordinal : Int32?
 } derive(Eq, Debug)
+
+///|
+pub extend WeekdaySpec with Eq::{equal, not_equal}
+
+///|
+pub extend WeekdaySpec with @debug.Debug::{to_repr}
 
 ///|
 pub struct RRule {
@@ -24,6 +36,9 @@ pub struct RRule {
   week_start : Int32
   positions : Array[Int32]
 } derive(Debug)
+
+///|
+pub extend RRule with @debug.Debug::{to_repr}
 
 ///|
 /// Parse the UTC-safe RFC 5545 subset used by MoonSchedule.

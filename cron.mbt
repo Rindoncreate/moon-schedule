@@ -10,6 +10,9 @@ pub struct Cron {
 } derive(Debug)
 
 ///|
+pub extend Cron with @debug.Debug::{to_repr}
+
+///|
 /// Parse a five-field UTC cron expression: minute hour day-of-month month day-of-week.
 pub fn Cron::parse(input : String) -> Cron raise ScheduleError {
   let fields = input
@@ -76,8 +79,8 @@ pub fn Cron::next_after(
 ///|
 fn parse_field(
   input : StringView,
-  minimum : Int,
-  maximum : Int,
+  minimum : Int32,
+  maximum : Int32,
   name : String,
   allow_names : Bool,
 ) -> Array[Bool] raise ScheduleError {
@@ -91,8 +94,8 @@ fn parse_field(
 ///|
 fn parse_part(
   input : String,
-  minimum : Int,
-  maximum : Int,
+  minimum : Int32,
+  maximum : Int32,
   name : String,
   allow_names : Bool,
   output : Array[Bool],
@@ -132,7 +135,12 @@ fn parse_part(
 }
 
 ///|
-fn mark_range(output : Array[Bool], start : Int, end : Int, step : Int) -> Unit {
+fn mark_range(
+  output : Array[Bool],
+  start : Int32,
+  end : Int32,
+  step : Int32,
+) -> Unit {
   for value = start; value <= end; value = value + step {
     output[value] = true
   }
@@ -141,11 +149,11 @@ fn mark_range(output : Array[Bool], start : Int, end : Int, step : Int) -> Unit 
 ///|
 fn cron_value(
   raw : StringView,
-  minimum : Int,
-  maximum : Int,
+  minimum : Int32,
+  maximum : Int32,
   name : String,
   allow_names : Bool,
-) -> Int raise ScheduleError {
+) -> Int32 raise ScheduleError {
   let upper = raw.to_owned().to_upper()
   let named = if allow_names { cron_name(upper) } else { None }
   let value = match named {
@@ -162,7 +170,7 @@ fn cron_value(
 }
 
 ///|
-fn cron_name(raw : String) -> Int? {
+fn cron_name(raw : String) -> Int32? {
   match raw {
     "JAN" => Some(1)
     "FEB" => Some(2)
