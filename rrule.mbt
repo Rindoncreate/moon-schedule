@@ -200,7 +200,12 @@ fn RRule::collect(
     return output
   }
   let mut emitted = 0
-  let mut period = 0
+  let mut period = if self.count is None {
+    self.first_period(start, from)
+  } else {
+    0
+  }
+  let mut visited = 0
   while true {
     let (lower, upper) = match self.period_range(start, period) {
       Some(range) => range
@@ -209,11 +214,12 @@ fn RRule::collect(
     if lower > day_index(stop) {
       return output
     }
-    if period >= period_limit {
+    if visited >= period_limit {
       raise InvalidRule(
         "recurrence period budget exhausted; narrow the window or raise period_limit",
       )
     }
+    visited = visited + 1
     for candidate in self.period_candidates(start, lower, upper) {
       if candidate < start {
         continue
@@ -244,6 +250,28 @@ fn RRule::collect(
     period = period + 1
   } nobreak {
     output
+  }
+}
+
+///|
+// Only uncounted rules may seek: COUNT refers to the complete anchored set.
+fn RRule::first_period(
+  self : RRule,
+  start : DateTime,
+  from : DateTime,
+) -> Int32 {
+  if from <= start {
+    return 0
+  }
+  match self.frequency {
+    Daily => (day_index(from) - day_index(start)) / self.interval
+    Weekly => {
+      let base = day_index(start) - (start.weekday() - self.week_start + 7) % 7
+      (day_index(from) - base) / 7 / self.interval
+    }
+    Monthly =>
+      ((from.year - start.year) * 12 + from.month - start.month) / self.interval
+    Yearly => (from.year - start.year) / self.interval
   }
 }
 

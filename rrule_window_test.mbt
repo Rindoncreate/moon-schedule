@@ -79,3 +79,24 @@ test "empty windows and the upper calendar boundary terminate" {
     0,
   )
 }
+
+///|
+test "uncounted rules seek across a century without burning query budgets" {
+  let daily = @schedule.RRule::parse("FREQ=DAILY")
+  let start = @schedule.DateTime::new(1900, 1, 1, 9, 0)
+  let from = @schedule.DateTime::new(2025, 1, 1, 9, 0)
+  assert_eq(
+    daily
+    .occurrences_window(start, from, from, period_limit=1)
+    .map(dt => dt.to_string()),
+    ["2025-01-01T09:00Z"],
+  )
+  let monthly = @schedule.RRule::parse("FREQ=MONTHLY;BYDAY=MO;BYSETPOS=-1")
+  let values = monthly.occurrences_window(
+    start,
+    @schedule.DateTime::new(2025, 1, 29, 9, 0),
+    @schedule.DateTime::new(2025, 2, 28, 9, 0),
+    period_limit=2,
+  )
+  assert_eq(values.map(dt => dt.to_string()), ["2025-02-24T09:00Z"])
+}
