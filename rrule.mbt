@@ -391,47 +391,6 @@ fn RRule::matches_weekday(self : RRule, date : DateTime) -> Bool {
 }
 
 ///|
-fn days_before_year(year : Int32) -> Int32 {
-  let y = year - 1
-  y * 365 + y / 4 - y / 100 + y / 400
-}
-
-///|
-fn month_start(year : Int32, month : Int32) -> Int32 {
-  let mut day = days_before_year(year)
-  for m in 1..<month {
-    day = day + days_in_month(year, m)
-  }
-  day
-}
-
-///|
-fn day_index(date : DateTime) -> Int32 {
-  month_start(date.year, date.month) + date.day - 1
-}
-
-///|
-fn date_at(day : Int32, hour : Int32, minute : Int32) -> DateTime {
-  let mut low = 1
-  let mut high = 10000
-  while low + 1 < high {
-    let mid = (low + high) / 2
-    if days_before_year(mid) <= day {
-      low = mid
-    } else {
-      high = mid
-    }
-  }
-  let mut remaining = day - days_before_year(low)
-  let mut month = 1
-  while remaining >= days_in_month(low, month) {
-    remaining = remaining - days_in_month(low, month)
-    month = month + 1
-  }
-  { year: low, month, day: remaining + 1, hour, minute, }
-}
-
-///|
 fn parse_frequency(value : String) -> Frequency raise ScheduleError {
   match value {
     "DAILY" => Daily
