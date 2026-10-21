@@ -4,20 +4,37 @@ on:
   push:
   pull_request:
 
+permissions:
+  contents: read
+
 jobs:
   verify:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      MOON_NATIVE: '1'
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
       - name: Set up MoonBit
         run: |
           curl -fsSL https://cli.moonbitlang.com/install/unix.sh | bash
           echo "$HOME/.moon/bin" >> "$GITHUB_PATH"
-      - run: moon version --all
-      - run: moon check --target all --deny-warn
-      - run: moon build --target all --deny-warn
-      - run: moon fmt --check
-      - run: moon info
-      - run: git diff --exit-code
-      - run: moon test --target all --deny-warn
-      - run: moon package
+      - name: Install independent test oracle
+        run: |
+          python3 -m venv .venv-oracle
+          .venv-oracle/bin/python -m pip install -r scripts/requirements-oracle.txt
+          echo "PYTHON=$PWD/.venv-oracle/bin/python" >> "$GITHUB_ENV"
+      - name: Regenerate independent reference tests
+        run: |
+          "$PYTHON" scripts/generate_vectors.py
+          moon fmt
+          git diff --exit-code -- reference_vectors_test.mbt fixtures/reference-vectors.json
+      - name: Check, build, test, examples, CLI and package
+        run: node scripts/verify.mjs
+      - name: Generate public API manifest
+        run: moon info

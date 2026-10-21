@@ -1,0 +1,8 @@
+_build/
+.mooncakes/
+__pycache__/
+*.pyc
+pkg.generated.mbti
+.venv-oracle/
+PROJECT_APPLICATION.md
+SUBMISSION_GUIDE.md
