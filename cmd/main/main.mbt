@@ -5,12 +5,36 @@ suberror CliError {
 
 ///|
 fn main {
-  run(@env.args()) catch {
-    @schedule.InvalidDate(message) => abort("invalid date: \{message}")
-    @schedule.InvalidRule(message) => abort("invalid rule: \{message}")
-    InvalidArguments(message) => abort("invalid arguments: \{message}")
-    _ => abort("unexpected command error")
+  run(cli_args()) catch {
+    @schedule.InvalidDate(message) => die("invalid date: \{message}")
+    @schedule.InvalidRule(message) => die("invalid rule: \{message}")
+    InvalidArguments(message) => die("invalid arguments: \{message}")
+    _ => die("unexpected command error")
   }
+}
+
+///|
+#cfg(target="js")
+fn cli_args() -> Array[String] {
+  let args = @env.args()
+  // Node exposes [node, script, ...arguments]; the other hosts expose one prefix.
+  if args.length() > 0 {
+    args[1:].to_owned()
+  } else {
+    []
+  }
+}
+
+///|
+#cfg(not(target="js"))
+fn cli_args() -> Array[String] {
+  @env.args()
+}
+
+///|
+fn die(message : String) -> Unit {
+  println(message)
+  abort(message)
 }
 
 ///|
