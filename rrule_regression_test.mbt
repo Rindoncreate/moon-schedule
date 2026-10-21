@@ -18,8 +18,7 @@ test "RFC weekly BYDAY expands every requested weekday within a week" {
     @schedule.DateTime::new(2025, 1, 15, 9, 0),
   )
   assert_eq(values.map(dt => dt.to_string()), [
-    "2025-01-06T09:00Z", "2025-01-08T09:00Z",
-    "2025-01-13T09:00Z", "2025-01-15T09:00Z",
+    "2025-01-06T09:00Z", "2025-01-08T09:00Z", "2025-01-13T09:00Z", "2025-01-15T09:00Z",
   ])
 }
 
@@ -31,8 +30,7 @@ test "RFC monthly BYMONTHDAY expands multiple days in each month" {
     @schedule.DateTime::new(2025, 2, 28, 9, 0),
   )
   assert_eq(values.map(dt => dt.to_string()), [
-    "2025-01-01T09:00Z", "2025-01-15T09:00Z",
-    "2025-02-01T09:00Z", "2025-02-15T09:00Z",
+    "2025-01-01T09:00Z", "2025-01-15T09:00Z", "2025-02-01T09:00Z", "2025-02-15T09:00Z",
   ])
 }
 
@@ -44,8 +42,7 @@ test "RFC yearly BYMONTH expands each month without changing the anchor day" {
     @schedule.DateTime::new(2026, 3, 10, 9, 0),
   )
   assert_eq(values.map(dt => dt.to_string()), [
-    "2025-01-10T09:00Z", "2025-03-10T09:00Z",
-    "2026-01-10T09:00Z", "2026-03-10T09:00Z",
+    "2025-01-10T09:00Z", "2025-03-10T09:00Z", "2026-01-10T09:00Z", "2026-03-10T09:00Z",
   ])
 }
 

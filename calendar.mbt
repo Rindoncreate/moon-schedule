@@ -6,20 +6,20 @@ pub suberror ScheduleError {
 
 ///|
 pub struct DateTime {
-  year : Int
-  month : Int
-  day : Int
-  hour : Int
-  minute : Int
+  year : Int32
+  month : Int32
+  day : Int32
+  hour : Int32
+  minute : Int32
 } derive(Eq, Compare, Debug)
 
 ///|
-pub fn is_leap_year(year : Int) -> Bool {
+pub fn is_leap_year(year : Int32) -> Bool {
   (year % 4 == 0 && year % 100 != 0) || year % 400 == 0
 }
 
 ///|
-pub fn days_in_month(year : Int, month : Int) -> Int {
+pub fn days_in_month(year : Int32, month : Int32) -> Int32 {
   match month {
     1 | 3 | 5 | 7 | 8 | 10 | 12 => 31
     4 | 6 | 9 | 11 => 30
@@ -30,12 +30,15 @@ pub fn days_in_month(year : Int, month : Int) -> Int {
 
 ///|
 pub fn DateTime::new(
-  year : Int,
-  month : Int,
-  day : Int,
-  hour : Int,
-  minute : Int,
+  year : Int32,
+  month : Int32,
+  day : Int32,
+  hour : Int32,
+  minute : Int32,
 ) -> DateTime raise ScheduleError {
+  if year < 1 || year > 9999 {
+    raise InvalidDate("year must be 1..9999")
+  }
   if month < 1 || month > 12 {
     raise InvalidDate("month must be 1..12")
   }
@@ -45,7 +48,7 @@ pub fn DateTime::new(
   if hour < 0 || hour > 23 || minute < 0 || minute > 59 {
     raise InvalidDate("time must be within 00:00..23:59")
   }
-  { year, month, day, hour, minute }
+  { year, month, day, hour, minute, }
 }
 
 ///|
@@ -74,24 +77,24 @@ pub fn DateTime::parse(input : String) -> DateTime raise ScheduleError {
 }
 
 ///|
-pub fn DateTime::add_minutes(self : DateTime, amount : Int) -> DateTime {
+pub fn DateTime::add_minutes(self : DateTime, amount : Int32) -> DateTime {
   if amount == 0 {
     self
   } else if amount > 0 {
     let next_minute = self.minute + 1
     if next_minute < 60 {
-      { ..self, minute: next_minute }.add_minutes(amount - 1)
+      { ..self, minute: next_minute, }.add_minutes(amount - 1)
     } else if self.hour < 23 {
-      { ..self, hour: self.hour + 1, minute: 0 }.add_minutes(amount - 1)
+      { ..self, hour: self.hour + 1, minute: 0, }.add_minutes(amount - 1)
     } else {
       self.next_day().add_minutes(amount - 1)
     }
   } else {
     let previous_minute = self.minute - 1
     if previous_minute >= 0 {
-      { ..self, minute: previous_minute }.add_minutes(amount + 1)
+      { ..self, minute: previous_minute, }.add_minutes(amount + 1)
     } else if self.hour > 0 {
-      { ..self, hour: self.hour - 1, minute: 59 }.add_minutes(amount + 1)
+      { ..self, hour: self.hour - 1, minute: 59, }.add_minutes(amount + 1)
     } else {
       self.previous_day().add_minutes(amount + 1)
     }
@@ -101,18 +104,18 @@ pub fn DateTime::add_minutes(self : DateTime, amount : Int) -> DateTime {
 ///|
 pub fn DateTime::next_day(self : DateTime) -> DateTime {
   if self.day < days_in_month(self.year, self.month) {
-    { ..self, day: self.day + 1, hour: 0, minute: 0 }
+    { ..self, day: self.day + 1, hour: 0, minute: 0, }
   } else if self.month < 12 {
-    { year: self.year, month: self.month + 1, day: 1, hour: 0, minute: 0 }
+    { year: self.year, month: self.month + 1, day: 1, hour: 0, minute: 0, }
   } else {
-    { year: self.year + 1, month: 1, day: 1, hour: 0, minute: 0 }
+    { year: self.year + 1, month: 1, day: 1, hour: 0, minute: 0, }
   }
 }
 
 ///|
 fn DateTime::previous_day(self : DateTime) -> DateTime {
   if self.day > 1 {
-    { ..self, day: self.day - 1, hour: 23, minute: 59 }
+    { ..self, day: self.day - 1, hour: 23, minute: 59, }
   } else if self.month > 1 {
     let month = self.month - 1
     {
@@ -123,12 +126,12 @@ fn DateTime::previous_day(self : DateTime) -> DateTime {
       minute: 59,
     }
   } else {
-    { year: self.year - 1, month: 12, day: 31, hour: 23, minute: 59 }
+    { year: self.year - 1, month: 12, day: 31, hour: 23, minute: 59, }
   }
 }
 
 ///|
-pub fn DateTime::weekday(self : DateTime) -> Int {
+pub fn DateTime::weekday(self : DateTime) -> Int32 {
   let mut y = self.year
   let mut m = self.month
   if m < 3 {
@@ -139,14 +142,14 @@ pub fn DateTime::weekday(self : DateTime) -> Int {
 }
 
 ///|
-fn parse_number(input : StringView, name : String) -> Int raise ScheduleError {
+fn parse_number(input : StringView, name : String) -> Int32 raise ScheduleError {
   @string.parse_int(input.to_owned()) catch {
     _ => raise InvalidDate("invalid \{name}")
   }
 }
 
 ///|
-fn pad2(value : Int) -> String {
+fn pad2(value : Int32) -> String {
   if value < 10 {
     "0\{value}"
   } else {
@@ -155,7 +158,7 @@ fn pad2(value : Int) -> String {
 }
 
 ///|
-fn pad4(value : Int) -> String {
+fn pad4(value : Int32) -> String {
   if value < 10 {
     "000\{value}"
   } else if value < 100 {

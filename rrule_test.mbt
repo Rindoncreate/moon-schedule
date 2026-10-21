@@ -9,12 +9,12 @@ test "rrule honors count and weekday filters" {
 }
 
 ///|
-test "rrule monthly clamps end of month" {
+test "rrule monthly skips invalid end of month" {
   let rule = RRule::parse("FREQ=MONTHLY;COUNT=2")
   let start = DateTime::new(2024, 1, 31, 8, 0)
   let end = DateTime::new(2024, 3, 31, 8, 0)
   let values = rule.occurrences_between(start, end)
-  inspect(values[1].to_string(), content="2024-02-29T08:00Z")
+  inspect(values[1].to_string(), content="2024-03-31T08:00Z")
 }
 
 ///|

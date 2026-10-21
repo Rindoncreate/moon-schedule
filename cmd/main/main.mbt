@@ -64,7 +64,7 @@ fn next_command(args : Array[String]) -> Unit raise @schedule.ScheduleError {
       let rule = @schedule.RRule::parse(expression)
       let mut current = after
       for _ in 0..<amount {
-        match rule.next_after(current) {
+        match rule.next_after_from(after, current) {
           Some(next) => {
             println(next.to_string())
             current = next
