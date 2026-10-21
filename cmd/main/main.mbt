@@ -1,70 +1,73 @@
 ///|
+suberror CliError {
+  InvalidArguments(String)
+}
+
+///|
 fn main {
   run(@env.args()) catch {
-    _ => {
-      println("error: invalid schedule input")
-      print_usage()
-    }
+    @schedule.InvalidDate(message) => abort("invalid date: \{message}")
+    @schedule.InvalidRule(message) => abort("invalid rule: \{message}")
+    InvalidArguments(message) => abort("invalid arguments: \{message}")
+    _ => abort("unexpected command error")
   }
 }
 
 ///|
-fn run(args : Array[String]) -> Unit raise @schedule.ScheduleError {
-  if args.length() < 3 {
+fn run(args : Array[String]) -> Unit raise {
+  if args.length() < 2 || args[1] == "help" || args[1] == "--help" {
     print_usage()
     return
+  }
+  if args.length() < 3 {
+    raise InvalidArguments("missing rule; use help")
   }
   match args[1] {
-    "parse" => parse_command(args)
+    "parse" => {
+      if args.length() != 3 {
+        raise InvalidArguments("parse requires one rule")
+      }
+      let (kind, expression) = split_spec(args[2])
+      match kind {
+        "cron" => ignore(@schedule.Cron::parse(expression))
+        "rrule" => ignore(@schedule.RRule::parse(expression))
+        _ => raise InvalidArguments("expected cron: or rrule: prefix")
+      }
+      println("valid \{kind}: \{expression}")
+    }
     "next" => next_command(args)
     "between" => between_command(args)
-    _ => print_usage()
+    "window" => window_command(args)
+    _ => raise InvalidArguments("unknown command; use help")
   }
 }
 
 ///|
-fn parse_command(args : Array[String]) -> Unit raise @schedule.ScheduleError {
+fn next_command(args : Array[String]) -> Unit raise {
   let (kind, expression) = split_spec(args[2])
   match kind {
     "cron" => {
-      ignore(@schedule.Cron::parse(expression))
-      println("valid cron: \{expression}")
-    }
-    "rrule" => {
-      ignore(@schedule.RRule::parse(expression))
-      println("valid rrule: \{expression}")
-    }
-    _ => print_usage()
-  }
-}
-
-///|
-fn next_command(args : Array[String]) -> Unit raise @schedule.ScheduleError {
-  if args.length() != 5 {
-    print_usage()
-    return
-  }
-  let (kind, expression) = split_spec(args[2])
-  let after = @schedule.DateTime::parse(args[3])
-  let amount = @string.parse_int(args[4]) catch { _ => 0 }
-  if amount < 1 {
-    println("amount must be positive")
-    return
-  }
-  match kind {
-    "cron" => {
+      if args.length() != 5 {
+        raise InvalidArguments("next cron requires after and amount")
+      }
       let cron = @schedule.Cron::parse(expression)
-      let mut current = after
+      let mut current = @schedule.DateTime::parse(args[3])
+      let amount = parse_amount(args[4])
       for _ in 0..<amount {
         current = cron.next_after(current)
         println(current.to_string())
       }
     }
     "rrule" => {
+      if args.length() != 6 {
+        raise InvalidArguments("next rrule requires DTSTART, after, and amount")
+      }
       let rule = @schedule.RRule::parse(expression)
-      let mut current = after
+      let start = @schedule.DateTime::parse(args[3])
+      let mut current = @schedule.DateTime::parse(args[4])
+      let amount = parse_amount(args[5])
       for _ in 0..<amount {
-        match rule.next_after_from(after, current) {
+        match rule.next_after_from(start, current) {
           Some(next) => {
             println(next.to_string())
             current = next
@@ -73,15 +76,14 @@ fn next_command(args : Array[String]) -> Unit raise @schedule.ScheduleError {
         }
       }
     }
-    _ => print_usage()
+    _ => raise InvalidArguments("expected cron: or rrule: prefix")
   }
 }
 
 ///|
-fn between_command(args : Array[String]) -> Unit raise @schedule.ScheduleError {
+fn between_command(args : Array[String]) -> Unit raise {
   if args.length() != 5 {
-    print_usage()
-    return
+    raise InvalidArguments("between requires start and end")
   }
   let (kind, expression) = split_spec(args[2])
   let start = @schedule.DateTime::parse(args[3])
@@ -94,19 +96,62 @@ fn between_command(args : Array[String]) -> Unit raise @schedule.ScheduleError {
       }
     }
     "cron" => {
+      if start > end {
+        return
+      }
       let cron = @schedule.Cron::parse(expression)
-      let mut current = start.add_minutes(-1)
-      for _ in 0..<1_100_000 {
+      let mut current = start
+      let mut emitted = 0
+      if cron.matches(start) {
+        println(start.to_string())
+        emitted = 1
+      }
+      while current < end {
         let next = cron.next_after(current)
         if next > end {
           return
         }
+        if emitted >= 10000 {
+          raise InvalidArguments("cron result budget exceeded")
+        }
         println(next.to_string())
         current = next
+        emitted = emitted + 1
       }
     }
-    _ => print_usage()
+    _ => raise InvalidArguments("expected cron: or rrule: prefix")
   }
+}
+
+///|
+fn window_command(args : Array[String]) -> Unit raise {
+  if args.length() != 6 {
+    raise InvalidArguments("window requires DTSTART, from, and end")
+  }
+  let (kind, expression) = split_spec(args[2])
+  if kind != "rrule" {
+    raise InvalidArguments("window requires rrule:")
+  }
+  let rule = @schedule.RRule::parse(expression)
+  let values = rule.occurrences_window(
+    @schedule.DateTime::parse(args[3]),
+    @schedule.DateTime::parse(args[4]),
+    @schedule.DateTime::parse(args[5]),
+  )
+  for value in values {
+    println(value.to_string())
+  }
+}
+
+///|
+fn parse_amount(value : String) -> Int32 raise {
+  let amount = @string.parse_int(value) catch {
+    _ => raise InvalidArguments("amount must be an integer")
+  }
+  if amount < 1 || amount > 10000 {
+    raise InvalidArguments("amount must be 1..10000")
+  }
+  amount
 }
 
 ///|
@@ -120,10 +165,13 @@ fn split_spec(input : String) -> (String, String) {
 
 ///|
 fn print_usage() -> Unit {
-  println("MoonSchedule UTC simulator")
-  println("  moon run cmd/main -- parse cron:<five fields>")
+  println("MoonSchedule UTC simulator (minute precision)")
+  println("  parse cron:<five fields> | rrule:<rule>")
+  println("  next cron:<five fields> <after> <amount>")
+  println("  next rrule:<rule> <DTSTART> <after> <amount>")
+  println("  between rrule:<rule> <DTSTART> <end>")
+  println("  window rrule:<rule> <DTSTART> <from> <end>")
   println(
-    "  moon run cmd/main -- next cron:<five fields> <YYYY-MM-DDTHH:MMZ> <amount>",
+    "  timestamps: YYYY-MM-DDTHH:MMZ; quote rules containing spaces or semicolons",
   )
-  println("  moon run cmd/main -- between rrule:<rule> <start> <end>")
 }

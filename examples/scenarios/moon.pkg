@@ -1,0 +1,5 @@
+import {
+  "100kkk/moon-schedule" @schedule,
+}
+
+pkgtype(kind: "executable")
